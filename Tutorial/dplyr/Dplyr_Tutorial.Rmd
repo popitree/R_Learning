@@ -1,0 +1,158 @@
+---
+title: "DPLYR TUTORIAL"
+output: html_notebook
+---
+
+```{r}
+data <- read.csv("msleep_ggplot2.csv", header = TRUE, na.strings = "NA")
+head(data)
+```
+
+```{r}
+summary(data)
+```
+##Select Columns
+```{r}
+library(dplyr)
+head(select(data, name, order))
+```
+
+```{r}
+head(select(data,-vore))
+```
+
+```{r}
+head(select(data, name:order))
+```
+
+```{r}
+colnames(data)
+```
+
+```{r}
+head(select(data, starts_with('sleep')))
+```
+
+##Filter Data
+```{r}
+filter(head(select(data, starts_with('sleep'))), sleep_rem > 0.7, sleep_cycle > 0.14)
+```
+
+```{r}
+head(filter(data, order %in% c('Primates', 'Rodentia')))
+```
+
+```{r}
+head(filter(data, order %in% c('Primates', 'Rodentia'), vore == 'omni'))
+```
+```{r}
+data %>%
+  filter(order %in% c('Primates', 'Rodentia'), vore == 'omni') %>%
+  head
+```
+```{r}
+data %>%
+  filter(order %in% c('Primates', 'Rodentia'), vore == 'omni') %>%
+  select(name, genus) %>%
+  head %>%
+  arrange(name)
+```
+```{r}
+data %>%
+  filter(sleep_total == max(sleep_total, na.rm=TRUE)) 
+```
+
+#Add new column using mutate
+
+base::transform(). The key difference between mutate() and transform() is that mutate allows you to refer to columns that you've just created:
+
+mutate(flights,
+  gain = arr_delay - dep_delay,
+  gain_per_hour = gain / (air_time / 60)
+)
+
+```{r}
+data %>%
+  mutate(sleep_proportion = sleep_total/sleep_rem, ID = rownames(data)) %>%
+  head
+
+```
+TRANSMUTE will show only newly created columns
+```{r}
+data %>%
+  transmute(sleep_proportion = sleep_total/sleep_rem, ID = rownames(data)) %>%
+  head
+```
+#SLICE
+To select rows 
+```{r}
+data %>%
+  transmute(sleep_proportion = sleep_total/sleep_rem, ID = rownames(data)) %>%
+  slice(2:5)
+```
+
+#Select and rename
+```{r}
+slice(data, 1:3)
+```
+To rename
+```{r}
+slice(select(data, 'SpeciesName' = name), 1:3)
+```
+
+As Select drops all the columns use rename
+```{r}
+data %>%
+  rename('Species Name' = name) %>%
+  slice(1:3)
+```
+
+#Distinct
+```{r}
+  distinct(data, vore)
+```
+
+```{r}
+data %>%
+  distinct(vore, order) %>%
+  slice(1:5)
+```
+
+#Summarise
+There are many other summary statistics you could consider such sd(), min(), max(), median(), sum(), n() (returns the length of vector), first() (returns first value in vector), last() (returns last value in vector) and n_distinct() (number of distinct values in vector).
+```{r}
+data %>%
+  summarise(avg_sleep = mean(sleep_total),
+            min_sleep = min(sleep_total),
+            max_sleep = max(sleep_total),
+            totalSamples = n())
+```
+#SAMPLE
+```{r}
+data %>%
+  sample_n(5)
+```
+
+```{r}
+sample_frac(data, replace = T, size = 0.2) %>% 
+arrange(name)
+```
+#GROUP BY - Split-Apply combined
+Lets group by taxonomic order then get summary statistics for each group
+```{r}
+data %>%
+  group_by(order) %>%
+  summarise(avg_sleep = mean(sleep_total),
+            min_sleep = min(sleep_total),
+            totalData = n())
+  
+```
+```{r}
+data %>%
+  group_by(order) %>%
+  summarise(unique_vores = n_distinct(vore),
+            count = n()
+            )
+
+```
+
